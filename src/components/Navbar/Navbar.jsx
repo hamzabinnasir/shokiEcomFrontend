@@ -16,10 +16,17 @@ export default function Navbar() {
     const [navMenu, setNavMenu] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
     const [isDesktopViewport, setIsDesktopViewport] = useState(false);
     
-    const { cartQuantity, profileData, token, setLoginPopup, setToken } = useContext(shopContext);
+    const { 
+        cartQuantity, 
+        profileData, 
+        token, 
+        setLoginPopup, 
+        setToken, 
+        searchTerm, 
+        setSearchTerm 
+    } = useContext(shopContext);
     const navbarRef = useRef(null);
     const navMenuRef = useRef(null);
     const navigate = useNavigate();
@@ -34,7 +41,6 @@ export default function Navbar() {
                 setSearchOpen(false);
             }
 
-            // Close profile nav menu when clicking outside of it
             if (navMenuRef.current && !navMenuRef.current.contains(event.target)) {
                 setNavMenu(false);
             }
@@ -74,11 +80,15 @@ export default function Navbar() {
         }
     }, [navState]);
 
-    // Close search when route changes
+    // FIXED: Only clear search when NOT on product category pages
     useEffect(() => {
         setSearchOpen(false);
-        setSearchTerm("");
-    }, [location]);
+        
+        // Only clear search term if we're navigating away from product category pages entirely
+        if (!location.pathname.includes("/productCategory")) {
+            setSearchTerm("");
+        }
+    }, [location, setSearchTerm]);
 
     // Close search on ESC
     useEffect(() => {
@@ -118,13 +128,10 @@ export default function Navbar() {
         const trimmedSearchTerm = searchTerm.trim();
         if (trimmedSearchTerm === "") return;
         
-        // Encode the search term to handle spaces and special characters
         const encodedSearchTerm = encodeURIComponent(trimmedSearchTerm);
-        
-        // Navigate to search route with encoded search term
         navigate(`/productCategory/search/${encodedSearchTerm}`);
         setSearchOpen(false);
-        setSearchTerm("");
+        // DON'T clear searchTerm here - let the ProductCategory page handle it
     };
 
     const handleKeyPress = (e) => {
