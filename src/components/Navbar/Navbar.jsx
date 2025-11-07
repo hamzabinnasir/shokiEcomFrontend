@@ -16,10 +16,8 @@ export default function Navbar() {
     const [navMenu, setNavMenu] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
     const [isDesktopViewport, setIsDesktopViewport] = useState(false);
-    
-    const { cartQuantity, profileData, token, setLoginPopup, setToken } = useContext(shopContext);
+    const { cartQuantity, profileData, token, setLoginPopup, setToken, searchTerm, setSearchTerm } = useContext(shopContext);
     const navbarRef = useRef(null);
     const navMenuRef = useRef(null);
     const navigate = useNavigate();
@@ -77,7 +75,10 @@ export default function Navbar() {
     // Close search when route changes
     useEffect(() => {
         setSearchOpen(false);
-        setSearchTerm("");
+        if (!location.pathname.includes("/productCategory/search")) {
+            setSearchTerm("");
+            localStorage.removeItem("searchTerm");
+        }
     }, [location]);
 
     // Close search on ESC
@@ -117,14 +118,10 @@ export default function Navbar() {
     const handleSearch = () => {
         const trimmedSearchTerm = searchTerm.trim();
         if (trimmedSearchTerm === "") return;
-        
-        // Encode the search term to handle spaces and special characters
+
         const encodedSearchTerm = encodeURIComponent(trimmedSearchTerm);
-        
-        // Navigate to search route with encoded search term
         navigate(`/productCategory/search/${encodedSearchTerm}`);
         setSearchOpen(false);
-        setSearchTerm("");
     };
 
     const handleKeyPress = (e) => {
@@ -161,17 +158,17 @@ export default function Navbar() {
             <nav id="navbar" ref={navbarRef}>
                 <div className="navTop">
                     <div className="navLeftSection">
-                        <img 
-                            src={assets.logo} 
-                            alt="no img" 
+                        <img
+                            src={assets.logo}
+                            alt="no img"
                             className="logo-img"
                             onClick={() => navigate("/")}
                         />
                         <ul className="navDesktopMenu">
                             {navListData.map((item) =>
-                                <li 
-                                    onClick={() => handleNavClick(item?.title)} 
-                                    key={item._id} 
+                                <li
+                                    onClick={() => handleNavClick(item?.title)}
+                                    key={item._id}
                                     className={navState === item?.title ? "navListItem underLine" : "navListItem"}
                                 >
                                     {item?.title}
@@ -181,8 +178,8 @@ export default function Navbar() {
                     </div>
 
                     <div className="navProfileSection">
-                        <button 
-                            className="hamburgerMenu" 
+                        <button
+                            className="hamburgerMenu"
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             aria-label="Toggle menu"
                         >
@@ -190,7 +187,7 @@ export default function Navbar() {
                             <span className={mobileMenuOpen ? "hamburgerLine active" : "hamburgerLine"}></span>
                             <span className={mobileMenuOpen ? "hamburgerLine active" : "hamburgerLine"}></span>
                         </button>
-                        
+
                         <div className="navMenuContainer" ref={navMenuRef}>
                             {token === "" ? (
                                 <button onClick={() => setLoginPopup(true)} className="navSignInBtn">Sign in</button>
@@ -215,9 +212,9 @@ export default function Navbar() {
 
                         {/* Search Trigger + Desktop inline search */}
                         <div className="searchContainer">
-                            <img 
-                                src={assets.searchLine} 
-                                alt="Search" 
+                            <img
+                                src={assets.searchLine}
+                                alt="Search"
                                 className="searchIcon"
                                 onClick={() => setSearchOpen((v) => !v)}
                             />
@@ -283,7 +280,7 @@ export default function Navbar() {
                             {navListData.map((item) => {
                                 const categoryData = navBottomListData.find(cat => cat.topLevelCategory === item.title);
                                 const isExpanded = navState === item.title;
-                                
+
                                 return (
                                     <li key={item._id} className="mobileMenuCategoryItem">
                                         <div
@@ -299,7 +296,7 @@ export default function Navbar() {
                                             <span>{item.title}</span>
                                             <span className="mobileMenuExpandIcon">{isExpanded ? '−' : '+'}</span>
                                         </div>
-                                        
+
                                         {isExpanded && categoryData && (
                                             <ul className="mobileSubMenuList">
                                                 {categoryData.listItemsContainer.map((container) => (
