@@ -26,7 +26,6 @@ export default function ShopContextProvider({ children }) {
     const [role, setRole] = useState("");
     const [profileData, setProfileData] = useState(null);
     const [loginPopup, setLoginPopup] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("" || localStorage.getItem("searchTerm"));
     const [loginState, setLoginState] = useState("register");
     const [token, setToken] = useState("");
 
@@ -193,22 +192,7 @@ export default function ShopContextProvider({ children }) {
         if(role && role === "admin"){
             window.location.href="http://localhost:5173"
         }
-    } , [role]);
-
-    useEffect(() => {
-        const savedSearchTerm = localStorage.getItem("searchTerm");
-        if (savedSearchTerm) {
-            setSearchTerm(savedSearchTerm);
-        }
-    }, []);
-
-    useEffect(() => {
-        if (searchTerm && searchTerm.trim() !== "") {
-            localStorage.setItem("searchTerm", searchTerm);
-        } else {
-            localStorage.removeItem("searchTerm");
-        }
-    }, [searchTerm]);
+    } , [role])
 
     const contextValue = {
         currency,
@@ -247,8 +231,6 @@ export default function ShopContextProvider({ children }) {
         handleLogout,
         handleTokenExpiration,
         deliveryCharges,
-        searchTerm,
-        setSearchTerm,
     }
 
     return (
