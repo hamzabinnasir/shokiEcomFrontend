@@ -645,6 +645,10 @@
     .breadcrumbContainer {
         padding: 12px 15px;
     }
+
+    .ratingDescription, .ratingTitle{
+        width: 280px;
+    }
     
     .breadcrumb {
         font-size: 11px;
