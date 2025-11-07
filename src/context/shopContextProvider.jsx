@@ -28,6 +28,7 @@ export default function ShopContextProvider({ children }) {
     const [loginPopup, setLoginPopup] = useState(false);
     const [loginState, setLoginState] = useState("register");
     const [token, setToken] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
 
     // Helpers
     const computeTotals = (cartData = []) => {
@@ -40,12 +41,11 @@ export default function ShopContextProvider({ children }) {
         cartData.forEach(cd => {
             const itemQty = Math.max(0, parseInt(cd.quantity) || 0);
             const itemPrice = Math.max(0, parseFloat(cd.cartProducts?.price) || 0);
-            // fallback: discountPrice may be undefined - assume itemPrice if not present
             const itemDiscountPrice = Math.max(0, parseFloat(cd.cartProducts?.discountPrice ?? itemPrice) || 0);
 
             qty += itemQty;
             priceSum += itemPrice * itemQty;
-            discountSum += (itemPrice - itemDiscountPrice) * itemQty; // total discount amount
+            discountSum += (itemPrice - itemDiscountPrice) * itemQty;
         });
 
         const finalAmount = Math.round((priceSum - discountSum) * 100) / 100;
@@ -58,7 +58,7 @@ export default function ShopContextProvider({ children }) {
         };
     };
 
-    // Recompute totals whenever userAllCartItems changes -> keeps Navbar & UI in sync
+    // Recompute totals whenever userAllCartItems changes
     useEffect(() => {
         const totals = computeTotals(userAllCartItems);
         setCartQuantity(totals.quantity);
@@ -67,23 +67,20 @@ export default function ShopContextProvider({ children }) {
         setTotalAmount(totals.total);
     }, [userAllCartItems]);
 
-    // Fetch cart data on token change (or mount if token present)
+    // Fetch cart data on token change
     useEffect(() => {
         const getUserCart = async () => {
             if (!token || token === "") return;
 
             try {
-                // send userId if you have profileData; otherwise backend may get user from token
                 const payload = profileData?._id ? { userId: profileData._id } : {};
                 const response = await axios.post(`${backendURL}/api/cart/all`, payload, { headers: { token } });
 
                 if (response.data.success) {
                     const cartData = response?.data?.findedUserCartData?.cartData || [];
                     setUserAllCartItems(cartData);
-                    // computeTotals will run via useEffect above
                 } else {
                     console.log("Cart fetch failed:", response.data.message);
-                    // Don't show error for empty cart or other non-critical issues
                     if (response.data.message !== "No Items in the Cart") {
                         toast.error(response.data.message);
                     }
@@ -92,13 +89,11 @@ export default function ShopContextProvider({ children }) {
                 console.log("getUserCart error:", error);
                 if (error.response?.status === 401 || error.response?.status === 403) {
                     console.log("Token expired, logging out user");
-                    // Logout flow
                     setToken("");
                     setProfileData(null);
                     localStorage.removeItem("token");
                 } else {
                     console.log("Cart fetch error:", error.message);
-                    // Don't show error for network issues or other non-critical errors
                 }
             }
         }
@@ -129,7 +124,7 @@ export default function ShopContextProvider({ children }) {
         if (savedToken && token === "") {
             setToken(savedToken);
         }
-    }, []);
+    }, [token]);
 
     useEffect(() =>{
         if(token && token!== ""){
@@ -231,6 +226,8 @@ export default function ShopContextProvider({ children }) {
         handleLogout,
         handleTokenExpiration,
         deliveryCharges,
+        searchTerm,
+        setSearchTerm,
     }
 
     return (
