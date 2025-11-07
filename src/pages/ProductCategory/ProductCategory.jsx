@@ -27,6 +27,7 @@ export default function ProductCategory() {
     let [loading, setLoading] = useState(true);
     let [isSearchMode, setIsSearchMode] = useState(false);
     let [decodedSearchTerm, setDecodedSearchTerm] = useState("");
+    let [hasSearched, setHasSearched] = useState(false); // NEW: Track if search has been performed
     
     const [openBox1, setOpenBox1] = useState(false);
     const [openBox2, setOpenBox2] = useState(false);
@@ -43,16 +44,28 @@ export default function ProductCategory() {
     const [productsPerPage] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
 
-    // Handle URL parameters and set mode
+    // Handle URL parameters and set mode - FIXED: More reliable detection
     useEffect(() => {
-        if (searchTerm) {
-            setIsSearchMode(true);
-            setDecodedSearchTerm(decodeURIComponent(searchTerm));
+        const isSearchRoute = searchTerm && searchTerm !== "undefined";
+        setIsSearchMode(isSearchRoute);
+        
+        if (isSearchRoute) {
+            const decoded = decodeURIComponent(searchTerm);
+            setDecodedSearchTerm(decoded);
+            setHasSearched(true); // Mark that we've performed a search
         } else {
-            setIsSearchMode(false);
             setDecodedSearchTerm("");
+            setHasSearched(false);
         }
-    }, [searchTerm]);
+
+        // Reset filters when route changes
+        setColor([]);
+        setSize([]);
+        setPriceRange("");
+        setDiscountRange("");
+        setAvailability("");
+        setCurrentPage(1);
+    }, [searchTerm, topLevelCategory, secondLevelCategory, thirdLevelCategory]);
 
     const handleColor = (e) => {
         let value = e.target.value;
@@ -131,23 +144,29 @@ export default function ProductCategory() {
         setFilteredProducts(products);
         const totalPagesCount = Math.ceil(products.length / productsPerPage);
         setTotalPages(totalPagesCount);
-        setCurrentPage(1);
+        // Only reset to page 1 if we have new search results
+        if (hasSearched || products.length !== filteredProducts.length) {
+            setCurrentPage(1);
+        }
     };
 
-    // Main data fetching function
+    // FIXED: Main data fetching function with better state management
     useEffect(() => {
+        let isMounted = true; // Prevent state updates on unmounted component
+        
         const fetchProducts = async () => {
             try {
                 setLoading(true);
                 let response;
 
-                if (isSearchMode) {
-                    // Handle search case
+                if (isSearchMode && decodedSearchTerm) {
+                    // Handle search case - ensure we only search when we have a term
+                    console.log("Searching for:", decodedSearchTerm);
                     response = await axios.post(`${backendURL}/api/product/search`, {
                         searchTerm: decodedSearchTerm
                     });
-                } else {
-                    // Handle normal category navigation
+                } else if (!isSearchMode) {
+                    // Handle normal category navigation - only when not in search mode
                     let payload = {
                         topLevelCategory: topLevelCategory || "",
                         secondLevelCategory: secondLevelCategory || "",
@@ -160,28 +179,49 @@ export default function ProductCategory() {
                     };
 
                     response = await axios.post(`${backendURL}/api/product/filter`, payload);
+                } else {
+                    // If we're in search mode but no decoded term, skip the API call
+                    setLoading(false);
+                    return;
                 }
 
-                if (response.data.success) {
-                    const products = response.data.findedFilteredProducts || [];
-                    setCategoryProducts(products);
-                    updatePagination(products);
-                } else {
-                    toast.error(response.data.message);
-                    setCategoryProducts([]);
-                    updatePagination([]);
+                if (isMounted) {
+                    if (response.data.success) {
+                        const products = response.data.findedFilteredProducts || [];
+                        setCategoryProducts(products);
+                        updatePagination(products);
+                        
+                        // Log for debugging
+                        console.log(`Found ${products.length} products for:`, 
+                            isSearchMode ? `search "${decodedSearchTerm}"` : `category ${thirdLevelCategory || secondLevelCategory || topLevelCategory}`);
+                    } else {
+                        toast.error(response.data.message);
+                        setCategoryProducts([]);
+                        updatePagination([]);
+                    }
+                    setLoading(false);
                 }
             } catch (error) {
-                console.error("Error fetching products:", error);
-                toast.error("Failed to load products");
-                setCategoryProducts([]);
-                updatePagination([]);
-            } finally {
-                setLoading(false);
+                if (isMounted) {
+                    console.error("Error fetching products:", error);
+                    toast.error("Failed to load products");
+                    setCategoryProducts([]);
+                    updatePagination([]);
+                    setLoading(false);
+                }
             }
         };
 
-        fetchProducts();
+        // Only fetch if we have valid parameters
+        if (isSearchMode ? decodedSearchTerm : true) {
+            fetchProducts();
+        } else {
+            setLoading(false);
+        }
+
+        return () => {
+            isMounted = false; // Cleanup function
+        };
     }, [
         backendURL, 
         isSearchMode, 
@@ -193,7 +233,8 @@ export default function ProductCategory() {
         size, 
         priceRange, 
         discountRange, 
-        availability
+        availability,
+        hasSearched // Include hasSearched to trigger re-fetch when search mode changes
     ]);
 
     // Click outside handler for sort dropdown
@@ -220,7 +261,7 @@ export default function ProductCategory() {
 
     // Get page title based on route
     const getPageTitle = () => {
-        if (isSearchMode) {
+        if (isSearchMode && decodedSearchTerm) {
             return `Search Results for "${decodedSearchTerm}"`;
         } else if (thirdLevelCategory && thirdLevelCategory !== "undefined") {
             return thirdLevelCategory;
@@ -476,7 +517,7 @@ export default function ProductCategory() {
                                 <div className="noProductsFound">
                                     <h2>No products found</h2>
                                     <p>
-                                        {isSearchMode 
+                                        {isSearchMode && decodedSearchTerm
                                             ? `No products found for "${decodedSearchTerm}". Try searching with different terms.`
                                             : "Try adjusting your filters to find what you're looking for."
                                         }
