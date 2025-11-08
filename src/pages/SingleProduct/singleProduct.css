@@ -257,13 +257,7 @@
     display: flex;
     justify-content: space-between;
     align-items: start;
-    
 }
-
-.recentReviews {
-    background-color: transparent;
-}
-
 .sinProPageTitle {
     font-size: 16px;
     font-weight: 600;
@@ -280,7 +274,19 @@
 
 /* Product Ratings Summary (Right Side) */
 .productRatingsSummaryS{
-    width: 500px;
+    flex: 2.3;
+}
+
+.recentReviews {
+    background-color: transparent;
+    flex: 3;
+    padding-right: 100px;
+}
+
+
+.ProSinReviewAndRater{
+    display: flex;
+    gap: 20px;
 }
 
 .overallRating {
@@ -434,11 +440,6 @@
     line-height: 1.4;
 }
 
-.ProSinReviewAndRater{
-    display: flex;
-    gap: 20px;
-}
-
 .raterName{
     font-size: 16px;
     text-transform: capitalize;
@@ -497,12 +498,12 @@
     object-fit: cover;
 }
 
-.ratingDesAndTitleDiv{
-    width: 600px;
-}
-
 .reviewsCount{
     color: rgb(0, 0, 164);
+}
+
+.raterDetails{
+    width: 100% !important;
 }
 
 /* Responsive Design */
@@ -645,10 +646,6 @@
     .breadcrumbContainer {
         padding: 12px 15px;
     }
-
-    .ratingDescription, .ratingTitle{
-        width: 280px;
-    }
     
     .breadcrumb {
         font-size: 11px;
@@ -705,7 +702,7 @@
         gap: 8px;
         flex-wrap: wrap;
     }
-    
+
     .addToCartButton {
         padding: 12px 20px;
         font-size: 12px;
@@ -758,5 +755,9 @@
     .similarProductCard .productBrand,
     .similarProductCard .productTitle {
         font-size: 12px;
+    }
+
+    .recentReviews{
+        padding-right: 0 !important;
     }
 }
